@@ -6,43 +6,24 @@ import utils
 
 class Tournoi:
     def __init__(self, nom):
-        """
-        Initialise un tournoi avec son nom.
-        Initialise aussi une liste vide pour les joueurs et pour les matchs.
-        """
         self.nom = nom
         self.joueurs = []
         self.matchs = []
 
     def charger_joueurs(self, chemin_csv):
-        """
-        Lire un fichier CSV contenant les joueurs.
-        Chaque ligne contient un pseudonyme.
-        Pour chaque ligne, créer un objet Joueur et l'ajouter à la liste des joueurs.
-        Utiliser la fonction lire_csv() du fichier utils.py.
-        """
-        pass
+        donnees = utils.lire_csv(chemin_csv)
+        self.joueurs = [Joueur(ligne['pseudo']) for ligne in donnees]
 
     def charger_matchs(self, chemin_csv):
-        """
-        Lire un fichier CSV contenant les matchs.
-        Chaque ligne contient deux pseudos de joueurs (joueur1, joueur2).
-        Trouver les objets Joueur correspondants dans la liste de joueurs.
-        Pour chaque ligne, créer un objet Match et l'ajouter à la liste des matchs.
-        Utiliser la fonction lire_csv() du fichier utils.py.
-        """
-        pass
+       donnees = utils.lire_csv(chemin_csv)
+        for ligne in donnees:
+            joueur1 = self.trouver_joueur(ligne['joueur1'])
+            joueur2 = self.trouver_joueur(ligne['joueur2'])
+            if joueur1 and joueur2:
+                self.matchs.append(Match(joueur1.pseudo, joueur2.pseudo))
         
 
     def saisir_scores(self):
-        """
-        Pour chaque match dans la liste des matchs :
-        - Afficher le match (afficher les pseudos des deux joueurs)
-        - Demander à l'utilisateur d'entrer les deux scores (score du joueur 1, score du joueur 2)
-        - Enregistrer les scores dans l'objet Match
-        - Déterminer le gagnant du match
-        - Si un gagnant existe (pas d'égalité), appeler enregistrer_victoire() sur le joueur gagnant.
-        """
         for match in self.matchs:
             print(f"Match: {match.joueur1} vs {match.joueur2}")
             try:
@@ -61,10 +42,7 @@ class Tournoi:
                 print("Erreur : Veuillez entrer des scores valides.")
 
     def afficher_classement(self):
-        """
-        Afficher le classement des joueurs.
-        Classer les joueurs du plus grand nombre de victoires au plus petit.
-        Afficher leur pseudo et leur nombre de victoires.
+      ficher leur pseudo et leur nombre de victoires.
         """
         self.joueurs.sort(key=lambda j: j.victoires, reverse=True)
         print("Classement des joueurs :")
@@ -72,22 +50,21 @@ class Tournoi:
             print(f"{joueur.pseudo} - Victoires : {joueur.victoires}")
 
     def sauvegarder(self, chemin_json):
-        """
-        Sauvegarder le tournoi dans un fichier JSON.
-        Le fichier doit contenir :
-        - le nom du tournoi
-        - la liste des joueurs (convertis en dictionnaires à l'aide de la fonction to_dict déjà implémenté dans la classe Joueur)
-        Utiliser la fonction sauvegarder_json() du fichier utils.py.
-        """
-        pass
+        data = {
+            "nom": self.nom,
+            "joueurs": [joueur.to_dict() for joueur in self.joueurs]
+        }
+        utils.sauvegarder_json(data, chemin_json)
 
     def generer_rapport(self, chemin_texte):
-        """
-        Générer un rapport du tournoi sous forme de fichier texte.
-        Le rapport doit contenir :
-        - Le nom du tournoi
-        - La liste des matchs joués avec leurs scores
-        - Le classement final
-        Utiliser la fonction ecrire_texte() du fichier utils.py.
-        """
-        pass
+        lignes = [f"Tournoi : {self.nom}\n\nMatchs joués :\n"]
+        for match in self.matchs:
+            lignes.append(f"{match.joueur1} {match.score1} - {match.score2} {match.joueur2}\n")
+
+        lignes.append("\nClassement final :\n")
+        joueurs_tries = sorted(self.joueurs, key=lambda j: j.victoires, reverse=True)
+        for i, joueur in enumerate(joueurs_tries, 1):
+            lignes.append(f"{i}. {joueur.pseudo} - {joueur.victoires} victoires\n")
+
+        contenu = ''.join(lignes)
+        utils.ecrire_texte(contenu, chemin_texte)
